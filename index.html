@@ -17,7 +17,7 @@
         .wrap { width: 95%; max-width: 450px; padding-top: 210px; padding-bottom: 80px; position: relative; }
         .hidden { display: none !important; }
 
-        /* Botones de Navegación */
+        /* Botones Navegación */
         .btn-home {
             position: fixed; top: 15px; left: 15px; z-index: 9999;
             background: var(--primary); color: white; border: none;
@@ -73,7 +73,10 @@
                 <h2 style="color: var(--primary); font-size: 1.1em;">Infracciones Internas</h2>
                 <button class="btn btn-primary" onclick="window.loadData()"><i class="fas fa-sync"></i></button>
             </div>
-            <input type="text" id="search-input" placeholder="Buscar UF o Propietario..." oninput="window.filterList()">
+            <div style="position: relative; display: flex; gap: 5px;">
+                <input type="text" id="search-input" placeholder="Buscar UF o Propietario..." oninput="window.filterList()">
+                <button class="btn btn-danger" style="margin-bottom:10px" onclick="window.clearSearch()"><i class="fas fa-times"></i></button>
+            </div>
             <div class="filter-bar">
                 <button class="btn-filter active" onclick="window.setFilter('TODOS', this)">Todos</button>
                 <button class="btn-filter filter-cochera" onclick="window.setFilter('COCHERA', this)">Cocheras</button>
@@ -103,11 +106,14 @@
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 style="color:var(--primary); margin-bottom:10px;">Editar Registro</h3>
+            <h3 id="edit-header" style="color:var(--primary); margin-bottom:10px;">Corregir e Informar</h3>
             <textarea id="edit-desc" rows="4"></textarea>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-edit').classList.add('hidden')">Cerrar</button>
-                <button class="btn btn-primary" style="flex:1" id="btn-update-reg">Actualizar</button>
+            <div style="display:flex; flex-direction: column; gap:8px;">
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-primary" style="flex:1" id="btn-update-silent">Actualizar</button>
+                    <button class="btn btn-success" style="flex:1" id="btn-update-wsp"><i class="fab fa-whatsapp"></i> Notificar</button>
+                </div>
+                <button class="btn btn-danger" onclick="document.getElementById('modal-edit').classList.add('hidden')">Cerrar</button>
             </div>
         </div>
     </div>
@@ -132,6 +138,7 @@
         let currentFilter = 'TODOS';
         let currentUFId = null;
         let activeEditId = null;
+        let activeEditUF = "";
 
         window.onscroll = () => {
             document.getElementById("btn-rocket").style.display = window.scrollY > 300 ? "flex" : "none";
@@ -147,7 +154,7 @@
 
         window.loadData = async () => {
             const list = document.getElementById("listado");
-            list.innerHTML = "<p style='text-align:center; padding:20px'>Cargando...</p>";
+            list.innerHTML = "<p style='text-align:center; padding:20px'>Sincronizando...</p>";
             try {
                 const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
                 departamentos = snap.docs.map(d => ({ id: d.id, cat: getCategoria(d.data().UF), ...d.data() }));
@@ -155,7 +162,13 @@
             } catch (e) { console.error(e); }
         };
 
+        window.clearSearch = () => {
+            document.getElementById("search-input").value = "";
+            window.filterList();
+        };
+
         window.setFilter = (type, btn) => {
+            window.clearSearch(); // LIMPIAR BUSQUEDA AL CAMBIAR CATEGORIA
             document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const si = document.getElementById("search-input");
@@ -188,7 +201,7 @@
                             </div>
                             <div style="display:flex; gap:10px">
                                 <button class="btn" style="background:var(--warning); color:white" onclick="window.openInf('${d.id}', '${d.UF}', '${d.cat}')"><i class="fas fa-exclamation-triangle"></i></button>
-                                <button class="btn" style="background:var(--primary); color:white" onclick="window.verInfracciones('${d.id}')"><i class="fas fa-eye"></i></button>
+                                <button class="btn" style="background:var(--primary); color:white" onclick="window.verInfracciones('${d.id}', '${d.UF}')"><i class="fas fa-eye"></i></button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px"></div>
@@ -216,7 +229,7 @@
                 tipo: (catUF === 'COCHERA') ? "Transito" : "Convivencia",
                 descripcion: desc,
                 fecha: new Date().toLocaleDateString(),
-                created: Date.now() // Usamos timestamp numérico para evitar errores de orden
+                created: Date.now()
             };
 
             try {
@@ -226,7 +239,7 @@
                     window.open(`https://wa.me/5491131552679?text=${msg}`, '_blank');
                 }
                 document.getElementById("modal-infraccion").classList.add("hidden");
-                alert("Guardado correctamente");
+                window.clearSearch(); // LIMPIAR BUSCADOR LUEGO DE RESULTADO EXITOSO
                 window.loadData();
             } catch (e) { alert("Error al guardar"); }
         };
@@ -234,8 +247,7 @@
         document.getElementById("btn-save-silent").onclick = () => procesarGuardado(false);
         document.getElementById("btn-save-wsp").onclick = () => procesarGuardado(true);
 
-        // HISTORIAL CORREGIDO (Sin orderBy en la query para evitar error de índice)
-        window.verInfracciones = async (id) => {
+        window.verInfracciones = async (id, uf) => {
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(el.classList.contains("hidden")) return;
@@ -244,45 +256,48 @@
             try {
                 const q = query(collection(db, "infracciones"), where("id_uf", "==", id));
                 const snap = await getDocs(q);
-                
                 let infracciones = [];
                 snap.forEach(ds => infracciones.push({id: ds.id, ...ds.data()}));
-                
-                // Ordenamos por fecha manualmente para evitar el error de Firebase
                 infracciones.sort((a, b) => b.created - a.created);
 
                 el.innerHTML = infracciones.length ? "" : "<p style='font-size:0.8em; color:var(--warning)'>Sin infracciones.</p>";
-                
                 infracciones.forEach(i => {
                     const cl = i.tipo === "Transito" ? "st-transito" : "st-convivencia";
                     el.innerHTML += `
                         <div class="hist-item ${cl}">
                             <b>${i.tipo.toUpperCase()}:</b> ${i.descripcion}<br><small>${i.fecha}</small>
                             <div style="margin-top:8px; display:flex;">
-                                <span class="btn-action-hist" style="color:var(--primary)" onclick="window.editInf('${i.id}','${i.descripcion}')"><i class="fas fa-edit"></i> Editar</span>
+                                <span class="btn-action-hist" style="color:var(--primary)" onclick="window.editInf('${i.id}','${i.descripcion}', '${uf}')"><i class="fas fa-edit"></i> Editar / WSP</span>
                                 <span class="btn-action-hist" style="color:var(--danger)" onclick="window.delInf('${i.id}')"><i class="fas fa-trash"></i> Borrar</span>
                             </div>
                         </div>`;
                 });
-            } catch (e) { 
-                console.error(e);
-                el.innerHTML = "<p style='color:var(--danger); font-size:0.8em'>Error al cargar.</p>"; 
-            }
+            } catch (e) { el.innerHTML = "Error cargando."; }
         };
 
-        window.editInf = (id, old) => {
+        window.editInf = (id, old, uf) => {
             activeEditId = id;
+            activeEditUF = uf;
             document.getElementById("edit-desc").value = old;
+            document.getElementById("edit-header").innerText = "Editar UF " + uf;
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
-        document.getElementById("btn-update-reg").onclick = async () => {
+        const procesarActualizacion = async (conWsp) => {
+            const desc = document.getElementById("edit-desc").value.trim();
             try {
-                await updateDoc(doc(db, "infracciones", activeEditId), { descripcion: document.getElementById("edit-desc").value });
+                await updateDoc(doc(db, "infracciones", activeEditId), { descripcion: desc });
+                if(conWsp) {
+                    const msg = `*ACTUALIZACION DE INFRACCIÓN*%0A*UF:* ${activeEditUF}%0A*Nuevo Motivo:* ${desc}`;
+                    window.open(`https://wa.me/5491131552679?text=${msg}`, '_blank');
+                }
                 document.getElementById("modal-edit").classList.add("hidden");
                 window.loadData();
             } catch (e) { alert("Error"); }
         };
+
+        document.getElementById("btn-update-silent").onclick = () => procesarActualizacion(false);
+        document.getElementById("btn-update-wsp").onclick = () => procesarActualizacion(true);
 
         window.delInf = async (id) => {
             const pin = prompt("🔐 Clave Maestra (4750):");
