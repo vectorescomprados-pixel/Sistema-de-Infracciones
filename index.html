@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover">
-    <title>Gestión Consorcios Pro</title>
+    <title>Gestión Consorcio Pro</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -20,19 +20,26 @@
         /* Cabecera Fija */
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .filter-bar { display: flex; gap: 5px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px; }
-        .btn-filter { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); background: #1d2a33; color: #aaa; font-size: 0.8em; cursor: pointer; white-space: nowrap; }
+        .btn-filter { padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); background: #1d2a33; color: #aaa; font-size: 0.8em; cursor: pointer; white-space: nowrap; flex: 1; }
         .btn-filter.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        /* Colores dinámicos por filtro */
+        .filter-cochera.active { background: var(--orange) !important; border-color: var(--orange) !important; }
+        .filter-local.active { background: var(--purple) !important; border-color: var(--purple) !important; }
+        .filter-depto.active { background: var(--primary) !important; border-color: var(--primary) !important; }
 
-        /* UI Elements */
-        input, select, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
+        input, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
+        #search-input { border-width: 2px; transition: border-color 0.4s; }
+
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
         .btn { padding: 10px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
         
-        /* Historial e Items */
         .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.85em; position: relative; border-left: 5px solid #ccc; }
         .st-convivencia { border-left-color: var(--purple); }
         .st-transito { border-left-color: var(--orange); }
-        .btn-del { position: absolute; top: 5px; right: 5px; color: var(--danger); background: none; border: none; font-size: 1.1em; cursor: pointer; }
+        .st-reparacion { border-left-color: var(--success); }
+        
+        .btn-del { position: absolute; top: 8px; right: 8px; color: var(--danger); background: none; border: none; cursor: pointer; font-size: 1.1em; }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); max-height: 90vh; overflow-y: auto; }
@@ -41,41 +48,38 @@
 <body>
 
     <div class="wrap">
-        <header class="main-header">
+        <header class="main-header" id="header-main">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h2 style="color: var(--primary); font-size: 1.2em;">Gestión Consorcio</h2>
+                <h2 style="color: var(--primary); font-size: 1.2em;" id="title-app">Gestión Consorcio</h2>
                 <button class="btn btn-primary" onclick="window.loadData()"><i class="fas fa-sync"></i></button>
             </div>
-            <input type="text" id="search-input" placeholder="Buscar UF o Nombre..." oninput="window.filterList()">
+            <input type="text" id="search-input" placeholder="Buscar por UF o Nombre..." oninput="window.filterList()">
             <div class="filter-bar">
                 <button class="btn-filter active" onclick="window.setFilter('TODOS', this)">Todos</button>
-                <button class="btn-filter" onclick="window.setFilter('COCHERA', this)">Cocheras</button>
-                <button class="btn-filter" onclick="window.setFilter('LOCAL', this)">Locales</button>
-                <button class="btn-filter" onclick="window.setFilter('DEPTO', this)">Deptos</button>
+                <button class="btn-filter filter-cochera" onclick="window.setFilter('COCHERA', this)">Cocheras</button>
+                <button class="btn-filter filter-local" onclick="window.setFilter('LOCAL', this)">Locales</button>
+                <button class="btn-filter filter-depto" onclick="window.setFilter('DEPTO', this)">Deptos</button>
             </div>
         </header>
 
-        <div id="listado">Cargando...</div>
+        <div id="listado">Sincronizando...</div>
     </div>
 
     <div id="modal-infraccion" class="modal hidden">
         <div class="modal-content" style="border-color: var(--warning);">
-            <h3 id="inf-title" style="margin-bottom:15px; color:var(--warning)">Infracción</h3>
-            <p id="inf-cat-auto" style="font-size: 0.8em; color: #aaa; margin-bottom: 10px;"></p>
-            
-            <label>Descripción del hecho:</label>
-            <textarea id="inf-desc" rows="4" placeholder="Ej: Obstrucción de rampa..."></textarea>
-            
+            <h3 id="inf-title" style="color:var(--warning)">Infracción</h3>
+            <p id="inf-cat-auto" style="font-size: 0.7em; color: #aaa; margin: 10px 0;"></p>
+            <textarea id="inf-desc" rows="4" placeholder="Detalle la infracción..."></textarea>
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-infraccion').classList.add('hidden')">Cerrar</button>
-                <button class="btn" style="flex:1; background: var(--success); color: white;" id="btn-save-inf">Notificar WSP</button>
+                <button class="btn btn-success" style="flex:1" id="btn-save-inf">Notificar WSP</button>
             </div>
         </div>
     </div>
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 id="edit-title" style="margin-bottom:15px; color:var(--primary)">Editar Registro</h3>
+            <h3 style="color:var(--primary); margin-bottom:10px;">Editar Registro</h3>
             <textarea id="edit-desc" rows="4"></textarea>
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-edit').classList.add('hidden')">Cancelar</button>
@@ -106,7 +110,7 @@
         let activeEditId = null;
         let activeEditColl = "";
 
-        // --- LÓGICA DE RANGOS ---
+        // --- LÓGICA DE CATEGORÍAS (Corregida para asegurar tipos numéricos) ---
         const getCategoria = (uf) => {
             const n = parseInt(uf);
             if (n >= 0 && n <= 87) return "COCHERA";
@@ -117,17 +121,31 @@
 
         window.loadData = async () => {
             const list = document.getElementById("listado");
-            list.innerHTML = "<p style='text-align:center'>Sincronizando...</p>";
+            list.innerHTML = "<p style='text-align:center; margin-top:20px;'>Cargando Unidades...</p>";
             try {
                 const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
-                departamentos = snap.docs.map(d => ({ id: d.id, cat: getCategoria(d.UF), ...d.data() }));
+                departamentos = snap.docs.map(d => {
+                    const data = d.data();
+                    return { id: d.id, cat: getCategoria(data.UF), ...data };
+                });
                 window.filterList();
             } catch (e) { console.error(e); }
         };
 
         window.setFilter = (type, btn) => {
+            // UI
             document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            
+            const searchInput = document.getElementById("search-input");
+            const header = document.getElementById("header-main");
+            
+            // Cambiar colores según categoría
+            if(type === 'COCHERA') searchInput.style.borderColor = 'var(--orange)';
+            else if(type === 'LOCAL') searchInput.style.borderColor = 'var(--purple)';
+            else if(type === 'DEPTO') searchInput.style.borderColor = 'var(--primary)';
+            else searchInput.style.borderColor = 'var(--border)';
+
             currentFilter = type;
             window.filterList();
         };
@@ -135,8 +153,9 @@
         window.filterList = () => {
             const search = document.getElementById("search-input").value.toLowerCase();
             const filtered = departamentos.filter(d => {
-                const matchesSearch = d.UF.toString().includes(search) || d.Propietario?.toLowerCase().includes(search);
-                const matchesTab = currentFilter === 'TODOS' || d.cat === currentFilter;
+                const matchesSearch = d.UF.toString().toLowerCase().includes(search) || 
+                                      (d.Propietario && d.Propietario.toLowerCase().includes(search));
+                const matchesTab = (currentFilter === 'TODOS') || (d.cat === currentFilter);
                 return matchesSearch && matchesTab;
             });
             render(filtered);
@@ -144,19 +163,23 @@
 
         function render(data) {
             const list = document.getElementById("listado");
-            list.innerHTML = "";
+            list.innerHTML = data.length ? "" : "<p style='text-align:center; padding:20px'>No hay unidades en esta categoría.</p>";
             data.forEach(d => {
                 list.innerHTML += `
                     <div class="card">
                         <div style="display:flex; justify-content:space-between; align-items:center">
                             <div>
-                                <small style="color:var(--primary)">${d.cat}</small>
-                                <h3 style="color:white">UF ${d.UF}</h3>
-                                <p style="font-size:0.8em; color:#8696a0">${d.Propietario || '---'}</p>
+                                <small style="color:var(--primary); font-weight:bold">${d.cat}</small>
+                                <h3 style="color:white; margin:2px 0">UF ${d.UF}</h3>
+                                <p style="font-size:0.8em; color:#8696a0">${d.Propietario || 'Sin Datos'}</p>
                             </div>
                             <div style="display:flex; gap:10px">
-                                <button class="btn" style="background:var(--warning); color:white" onclick="window.openInf('${d.id}', '${d.UF}', '${d.cat}')"><i class="fas fa-exclamation-triangle"></i></button>
-                                <button class="btn" style="background:var(--primary); color:white" onclick="window.verTodo('${d.id}', '${d.UF}')"><i class="fas fa-eye"></i></button>
+                                <button class="btn" style="background:var(--warning); color:white" onclick="window.openInf('${d.id}', '${d.UF}', '${d.cat}')">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </button>
+                                <button class="btn" style="background:var(--primary); color:white" onclick="window.verTodo('${d.id}', '${d.UF}')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px"></div>
@@ -168,98 +191,103 @@
         window.openInf = (id, uf, cat) => {
             currentUFId = id;
             document.getElementById("inf-title").innerText = "Infracción UF " + uf;
-            document.getElementById("inf-cat-auto").innerText = "Categoría detectada: " + cat;
+            document.getElementById("inf-cat-auto").innerText = "TIPO: " + cat;
             document.getElementById("inf-desc").value = "";
             document.getElementById("modal-infraccion").classList.remove("hidden");
         };
 
         document.getElementById("btn-save-inf").onclick = async () => {
             const desc = document.getElementById("inf-desc").value.trim();
-            const ufTxt = document.getElementById("inf-title").innerText.split(" ");
-            if(!desc) return alert("Escriba el motivo");
+            const ufRaw = document.getElementById("inf-title").innerText.split(" ");
+            if(!desc) return alert("Ingrese descripción");
 
-            const cat = getCategoria(ufTxt);
+            const categoriaUF = getCategoria(ufRaw);
             const data = {
                 id_uf: currentUFId,
-                nro_uf: ufTxt,
-                tipo: (cat === 'COCHERA') ? "Transito" : "Convivencia",
+                nro_uf: ufRaw,
+                tipo: (categoriaUF === 'COCHERA') ? "Transito" : "Convivencia",
                 descripcion: desc,
-                fecha: new Date().toLocaleDateString()
+                fecha: new Date().toLocaleDateString(),
+                timestamp: new Date()
             };
 
             try {
                 await addDoc(collection(db, "infracciones"), data);
-                const msg = `*SISTEMA DE GESTION*%0A*UF:* ${ufTxt}%0A*Motivo:* ${desc}`;
+                const msg = `*REPORTE DE INFRACCIÓN*%0A*UF:* ${ufRaw}%0A*Categoría:* ${categoriaUF}%0A*Motivo:* ${desc}`;
                 window.open(`https://wa.me/5491131552679?text=${msg}`, '_blank');
                 document.getElementById("modal-infraccion").classList.add("hidden");
                 window.loadData();
             } catch (e) { alert("Error al guardar"); }
         };
 
-        // --- VER HISTORIAL COMPLETO ---
+        // --- HISTORIAL COMPLETO (Ojo) ---
         window.verTodo = async (id, uf) => {
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(el.classList.contains("hidden")) return;
 
-            el.innerHTML = "<small>Cargando...</small>";
+            el.innerHTML = "<small>Buscando historial...</small>";
             try {
-                const qRep = query(collection(db, "reparaciones"), where("id_uf", "==", id));
-                const qInf = query(collection(db, "infracciones"), where("id_uf", "==", id));
-                const [sRep, sInf] = await Promise.all([getDocs(qRep), getDocs(qInf)]);
+                const qRep = query(collection(db, "reparaciones"), where("id_uf", "==", id), orderBy("fecha", "desc"));
+                const qInf = query(collection(db, "infracciones"), where("id_uf", "==", id), orderBy("timestamp", "desc"));
                 
-                el.innerHTML = (sRep.empty && sInf.empty) ? "<p style='font-size:0.8em'>Sin registros.</p>" : "";
+                const [sRep, sInf] = await Promise.all([getDocs(qRep), getDocs(qInf)]);
+                el.innerHTML = "";
 
-                sRep.forEach(doc => {
-                    const r = doc.data();
+                if(sRep.empty && sInf.empty) el.innerHTML = "<p style='font-size:0.8em; color:var(--warning)'>Sin registros históricos.</p>";
+
+                sRep.forEach(docSnap => {
+                    const r = docSnap.data();
                     el.innerHTML += `
-                        <div class="hist-item" style="border-left-color: var(--success)">
-                            <b>🔧 Rep:</b> ${r.descripcion} <br> <small>${r.fecha}</small>
-                            <button class="btn-del" style="right:30px; color:var(--primary)" onclick="window.editReg('reparaciones','${doc.id}','${r.descripcion}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn-del" onclick="window.deleteReg('reparaciones','${doc.id}')"><i class="fas fa-trash"></i></button>
+                        <div class="hist-item st-reparacion">
+                            <b>🔧 Reparación:</b> ${r.descripcion}<br><small>${r.fecha}</small>
+                            <div style="margin-top:5px; display:flex; gap:10px">
+                                <span style="color:var(--primary); cursor:pointer; font-size:0.8em" onclick="window.editReg('reparaciones','${docSnap.id}','${r.descripcion}')"><i class="fas fa-edit"></i> Editar</span>
+                                <span style="color:var(--danger); cursor:pointer; font-size:0.8em" onclick="window.deleteReg('reparaciones','${docSnap.id}')"><i class="fas fa-trash"></i> Borrar</span>
+                            </div>
                         </div>`;
                 });
 
-                sInf.forEach(doc => {
-                    const i = doc.data();
+                sInf.forEach(docSnap => {
+                    const i = docSnap.data();
                     const cl = i.tipo === "Transito" ? "st-transito" : "st-convivencia";
                     el.innerHTML += `
                         <div class="hist-item ${cl}">
-                            <b>⚠️ Inf:</b> ${i.descripcion} <br> <small>${i.fecha}</small>
-                            <button class="btn-del" style="right:30px; color:var(--primary)" onclick="window.editReg('infracciones','${doc.id}','${i.descripcion}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn-del" onclick="window.deleteReg('infracciones','${doc.id}')"><i class="fas fa-trash"></i></button>
+                            <b>⚠️ Infracción:</b> ${i.descripcion}<br><small>${i.fecha}</small>
+                            <div style="margin-top:5px; display:flex; gap:10px">
+                                <span style="color:var(--primary); cursor:pointer; font-size:0.8em" onclick="window.editReg('infracciones','${docSnap.id}','${i.descripcion}')"><i class="fas fa-edit"></i> Editar</span>
+                                <span style="color:var(--danger); cursor:pointer; font-size:0.8em" onclick="window.deleteReg('infracciones','${docSnap.id}')"><i class="fas fa-trash"></i> Borrar</span>
+                            </div>
                         </div>`;
                 });
-            } catch (e) { el.innerHTML = "Error de conexión"; }
+            } catch (e) { el.innerHTML = "Error cargando historial."; }
         };
 
-        // --- EDITAR Y ELIMINAR ---
+        // --- EDICIÓN Y SEGURIDAD ---
         window.editReg = (coll, id, oldDesc) => {
-            activeEditColl = coll;
-            activeEditId = id;
+            activeEditColl = coll; activeEditId = id;
             document.getElementById("edit-desc").value = oldDesc;
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
         document.getElementById("btn-update-reg").onclick = async () => {
-            const newDesc = document.getElementById("edit-desc").value;
             try {
-                await updateDoc(doc(db, activeEditColl, activeEditId), { descripcion: newDesc });
+                await updateDoc(doc(db, activeEditColl, activeEditId), { 
+                    descripcion: document.getElementById("edit-desc").value 
+                });
                 document.getElementById("modal-edit").classList.add("hidden");
                 window.loadData();
             } catch (e) { alert("Error al actualizar"); }
         };
 
         window.deleteReg = async (coll, id) => {
-            const pin = prompt("Ingrese Clave Maestra para eliminar:");
+            const pin = prompt("🔐 Ingrese Clave Maestra (4750) para eliminar:");
             if(pin === "4750") {
                 try {
                     await deleteDoc(doc(db, coll, id));
                     window.loadData();
-                } catch (e) { alert("Error"); }
-            } else if(pin !== null) {
-                alert("Clave incorrecta");
-            }
+                } catch (e) { alert("Error al eliminar"); }
+            } else if (pin !== null) alert("Clave incorrecta.");
         };
 
         window.loadData();
