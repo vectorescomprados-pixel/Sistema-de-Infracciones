@@ -3,43 +3,25 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover">
-    <title>Gestión Reparaciones Pro</title>
+    <title>Gestión Reparaciones e Infracciones Pro</title>
     
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0b141a">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
             --bg: #0b141a; --card: #111b21; --primary: #2563eb; --danger: #e11d48; 
             --text: #e9edef; --border: #222d34; --success: #22c55e; --warning: #f59e0b;
+            --purple: #a855f7; --orange: #f97316;
         }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; transition: 0.3s; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; scroll-behavior: smooth; }
         .wrap { width: 95%; max-width: 450px; position: relative; padding-top: 170px; padding-bottom: 80px; }
         .hidden { display: none !important; }
 
-        /* 🏠 ESTILO EXACTO DEL BOTÓN HOME DE TU INDEX */
         .btn-home {
-            position: fixed;
-            top: 15px;
-            left: 15px;
-            z-index: 9999999;
-            background: rgba(37, 99, 235, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
+            position: fixed; top: 15px; left: 15px; z-index: 9999999;
+            background: rgba(37, 99, 235, 0.9); color: white; border: none;
+            border-radius: 50%; width: 45px; height: 45px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; text-decoration: none;
         }
         
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
@@ -60,12 +42,17 @@
         .btn-primary { background: var(--primary); color: #fff; }
         .btn-success { background: var(--success); color: #fff; }
         .btn-danger { background: var(--danger); color: #fff; }
+        .btn-warning { background: var(--warning); color: #fff; }
 
         .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.9em; border-left: 5px solid #ccc; }
         .st-pendiente { border-left-color: var(--danger); background: rgba(225,29,72,0.1); }
         .st-en-proceso { border-left-color: var(--warning); background: rgba(245,158,11,0.1); }
         .st-terminado { border-left-color: var(--success); background: rgba(34,197,94,0.1); }
         
+        /* Estilos Infracciones */
+        .st-convivencia { border-left-color: var(--purple); background: rgba(168, 85, 247, 0.1); }
+        .st-transito { border-left-color: var(--orange); background: rgba(249, 115, 22, 0.1); }
+
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); max-height: 90vh; overflow-y: auto; }
     </style>
@@ -81,7 +68,7 @@
     <div class="wrap">
         <header class="main-header">
             <div class="nav-top">
-                <h2 style="font-size: 1.1em; color: var(--primary); margin-right: auto; padding-left: 50px;">Reparaciones</h2>
+                <h2 style="font-size: 1.1em; color: var(--primary); margin-right: auto; padding-left: 50px;">Gestión Pro</h2>
                 <button class="btn btn-primary" id="btn-refresh"><i class="fas fa-sync"></i></button>
             </div>
             <div class="search-box">
@@ -121,6 +108,29 @@
             <div style="display:flex; gap:10px; margin-top:15px">
                 <button class="btn btn-danger" style="flex:1" onclick="window.closeModal()">Cerrar</button>
                 <button class="btn btn-success" style="flex:1" id="btn-guardar-principal">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-infraccion" class="modal hidden">
+        <div class="modal-content" style="border-color: var(--warning);">
+            <h3 id="inf-title" style="margin-bottom:15px; color:var(--warning)">Nueva Infracción</h3>
+            <label>Tipo:</label>
+            <select id="inf-tipo" onchange="window.filterCategoria()">
+                <option value="Convivencia">Convivencia (Deptos/Locales)</option>
+                <option value="Transito">Tránsito (Cocheras)</option>
+            </select>
+            <label>Categoría:</label>
+            <select id="inf-categoria">
+                <option value="Departamento">Departamento</option>
+                <option value="Local">Local</option>
+                <option value="Cochera">Cochera</option>
+            </select>
+            <label>Descripción:</label>
+            <textarea id="inf-desc" rows="3" placeholder="Motivo de la infracción..."></textarea>
+            <div style="display:flex; gap:10px; margin-top:15px">
+                <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-infraccion').classList.add('hidden')">Cerrar</button>
+                <button class="btn btn-warning" style="flex:1" id="btn-guardar-infraccion">Notificar WSP</button>
             </div>
         </div>
     </div>
@@ -171,9 +181,10 @@
                                 <h3 style="color:var(--primary)">UF ${d.UF}</h3>
                                 <p style="font-size:0.9em; color:#8696a0"><i class="fas fa-user"></i> ${d.Propietario || 'Sin nombre'}</p>
                             </div>
-                            <div style="display:flex; gap:8px">
-                                <button class="btn btn-success" style="padding:8px 12px" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
-                                <button class="btn btn-primary" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i> Trabajos</button>
+                            <div style="display:flex; gap:5px; flex-wrap: wrap; justify-content: flex-end;">
+                                <button class="btn btn-warning" style="padding:8px 10px; font-size: 0.8em;" onclick="window.openInfraccion('${d.id}', '${d.UF}')"><i class="fas fa-exclamation-triangle"></i></button>
+                                <button class="btn btn-success" style="padding:8px 10px; font-size: 0.8em;" onclick="window.openNew('${d.id}', '${d.UF}')"><i class="fas fa-plus"></i></button>
+                                <button class="btn btn-primary" style="padding:8px 10px; font-size: 0.8em;" onclick="window.verHist('${d.id}', '${d.UF}')"><i class="fas fa-history"></i></button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:12px; border-top:1px solid var(--border); padding-top:10px"></div>
@@ -181,6 +192,7 @@
             });
         }
 
+        // --- LÓGICA REPARACIONES ---
         window.openNew = (id, uf) => {
             currentUFId = id; currentRepDocId = null;
             document.getElementById("m-title").innerText = "Nueva Tarea UF " + uf;
@@ -191,27 +203,9 @@
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
-        window.editSpecific = async (docId, uf) => {
-            currentRepDocId = docId;
-            document.getElementById("m-title").innerText = "Modificar - UF " + uf;
-            try {
-                const docSnap = await getDoc(doc(db, "reparaciones", docId));
-                if (docSnap.exists()) {
-                    const r = docSnap.data();
-                    currentUFId = r.id_uf;
-                    document.getElementById("r-descripcion").value = r.descripcion || "";
-                    document.getElementById("r-ejecutor").value = r.ejecutor || "";
-                    document.getElementById("r-estado").value = r.estado || "Pendiente";
-                    document.getElementById("r-responsable").value = r.responsable || "Consorcio";
-                    document.getElementById("modal-edit").classList.remove("hidden");
-                }
-            } catch (e) { alert("Error al cargar datos."); }
-        };
-
         window.saveRep = async () => {
             const desc = document.getElementById("r-descripcion").value.trim();
-            if(!desc) { alert("Por favor, ingresa una descripción."); return; }
-
+            if(!desc) return alert("Ingresa descripción");
             const data = {
                 id_uf: currentUFId,
                 descripcion: desc,
@@ -220,50 +214,81 @@
                 responsable: document.getElementById("r-responsable").value,
                 fecha: new Date().toLocaleDateString()
             };
-
             try {
-                if (currentRepDocId) {
-                    await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
-                } else {
-                    await addDoc(collection(db, "reparaciones"), data);
-                }
+                if (currentRepDocId) await updateDoc(doc(db, "reparaciones", currentRepDocId), data);
+                else await addDoc(collection(db, "reparaciones"), data);
                 window.closeModal();
                 window.loadData();
-            } catch (e) { alert("Error al guardar en la nube."); }
+            } catch (e) { alert("Error al guardar."); }
         };
-
-        document.getElementById("btn-guardar-principal").onclick = window.saveRep;
-        window.closeModal = () => document.getElementById("modal-edit").classList.add("hidden");
 
         window.verHist = async (id, uf) => {
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(!el.classList.contains("hidden")) {
-                el.innerHTML = "<p style='font-size:0.8em; color:#aaa'>Buscando trabajos...</p>";
+                el.innerHTML = "<p style='font-size:0.8em; color:#aaa'>Buscando...</p>";
                 try {
-                    const q = query(collection(db, "reparaciones"), where("id_uf", "==", id));
-                    const snap = await getDocs(q);
-                    el.innerHTML = snap.empty ? "<p style='font-size:0.8em; color:var(--warning)'>No hay reparaciones registradas.</p>" : "";
-                    snap.forEach(ds => {
+                    // Cargar Reparaciones e Infracciones juntas
+                    const qRep = query(collection(db, "reparaciones"), where("id_uf", "==", id));
+                    const qInf = query(collection(db, "infracciones"), where("id_uf", "==", id));
+                    
+                    const [snapRep, snapInf] = await Promise.all([getDocs(qRep), getDocs(qInf)]);
+                    
+                    el.innerHTML = (snapRep.empty && snapInf.empty) ? "<p style='font-size:0.8em; color:var(--warning)'>Sin registros.</p>" : "";
+                    
+                    snapRep.forEach(ds => {
                         const r = ds.data();
                         const cl = r.estado === "Pendiente" ? "st-pendiente" : (r.estado === "En Proceso" ? "st-en-proceso" : "st-terminado");
-                        el.innerHTML += `
-                            <div class="hist-item ${cl}">
-                                <div style="display:flex; justify-content:space-between; align-items:center">
-                                    <div style="flex:1; padding-right:10px">
-                                        <b>${r.fecha}</b> - ${r.descripcion}<br>
-                                        <small style="color:#aaa">Resp: ${r.responsable || 'Consorcio'}</small>
-                                    </div>
-                                    <button class="btn btn-primary" style="padding:6px 10px; font-size:0.8em" onclick="window.editSpecific('${ds.id}', '${uf}')">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                </div>
-                            </div>`;
+                        el.innerHTML += `<div class="hist-item ${cl}"><b>🔧 REP:</b> ${r.descripcion} <small>(${r.fecha})</small></div>`;
                     });
-                } catch (e) { el.innerHTML = "Error al conectar."; }
+
+                    snapInf.forEach(ds => {
+                        const i = ds.data();
+                        const cl = i.tipo === "Convivencia" ? "st-convivencia" : "st-transito";
+                        el.innerHTML += `<div class="hist-item ${cl}"><b>⚠️ INF [${i.tipo}]:</b> ${i.descripcion} <small>(${i.fecha})</small></div>`;
+                    });
+                } catch (e) { el.innerHTML = "Error."; }
             }
         };
 
+        // --- LÓGICA INFRACCIONES ---
+        window.openInfraccion = (id, uf) => {
+            currentUFId = id;
+            document.getElementById("inf-title").innerText = "Infracción UF " + uf;
+            document.getElementById("inf-desc").value = "";
+            document.getElementById("modal-infraccion").classList.remove("hidden");
+        };
+
+        window.filterCategoria = () => {
+            const tipo = document.getElementById("inf-tipo").value;
+            document.getElementById("inf-categoria").value = (tipo === "Transito") ? "Cochera" : "Departamento";
+        };
+
+        document.getElementById("btn-guardar-infraccion").onclick = async () => {
+            const desc = document.getElementById("inf-desc").value.trim();
+            const nroUF = document.getElementById("inf-title").innerText.split(" ");
+            if(!desc) return alert("Falta descripción");
+
+            const data = {
+                id_uf: currentUFId,
+                nro_uf: nroUF,
+                tipo: document.getElementById("inf-tipo").value,
+                categoria: document.getElementById("inf-categoria").value,
+                descripcion: desc,
+                fecha: new Date().toLocaleDateString()
+            };
+
+            try {
+                await addDoc(collection(db, "infracciones"), data);
+                const msg = `*REPORTE DE INFRACCIÓN*%0A*UF:* ${nroUF}%0A*Tipo:* ${data.tipo}%0A*Motivo:* ${desc}`;
+                window.open(`https://wa.me/5491131552679?text=${msg}`, '_blank');
+                document.getElementById("modal-infraccion").classList.add("hidden");
+                window.loadData();
+            } catch (e) { alert("Error al guardar."); }
+        };
+
+        document.getElementById("btn-guardar-principal").onclick = window.saveRep;
+        window.closeModal = () => document.getElementById("modal-edit").classList.add("hidden");
         document.getElementById("btn-search").onclick = () => {
             const v = document.getElementById("search-input").value.toLowerCase();
             render(departamentos.filter(d => d.UF.toString().toLowerCase().includes(v) || d.Propietario.toLowerCase().includes(v)));
