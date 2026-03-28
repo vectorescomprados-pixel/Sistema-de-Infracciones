@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover">
-    <title>Gestión Consorcio Pro</title>
+    <title>Gestión de Infracciones Pro</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -14,32 +14,46 @@
         }
         * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; transition: 0.3s; }
         body { background: var(--bg); color: var(--text); display: flex; justify-content: center; min-height: 100vh; }
-        .wrap { width: 95%; max-width: 450px; padding-top: 210px; padding-bottom: 80px; }
+        .wrap { width: 95%; max-width: 450px; padding-top: 210px; padding-bottom: 80px; position: relative; }
         .hidden { display: none !important; }
 
-        /* Cabecera Fija */
+        /* Botones Especiales */
+        .btn-home {
+            position: fixed; top: 15px; left: 15px; z-index: 9999;
+            background: rgba(37, 99, 235, 0.9); color: white; border: none;
+            border-radius: 50%; width: 45px; height: 45px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        #btn-rocket {
+            position: fixed; bottom: 20px; right: 20px; width: 50px; height: 50px;
+            background: var(--primary); color: white; border-radius: 50%; border: none;
+            font-size: 1.5em; cursor: pointer; display: none; z-index: 2000;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); align-items: center; justify-content: center;
+        }
+
+        /* Cabecera */
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .filter-bar { display: flex; gap: 5px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px; }
         .btn-filter { padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); background: #1d2a33; color: #aaa; font-size: 0.8em; cursor: pointer; white-space: nowrap; flex: 1; }
         .btn-filter.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* Colores dinámicos por filtro */
         .filter-cochera.active { background: var(--orange) !important; border-color: var(--orange) !important; }
         .filter-local.active { background: var(--purple) !important; border-color: var(--purple) !important; }
-        .filter-depto.active { background: var(--primary) !important; border-color: var(--primary) !important; }
 
         input, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
-        #search-input { border-width: 2px; transition: border-color 0.4s; }
+        #search-input { border-width: 2px; }
 
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
         .btn { padding: 10px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
         
+        /* Historial Infracciones */
         .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.85em; position: relative; border-left: 5px solid #ccc; }
         .st-convivencia { border-left-color: var(--purple); }
         .st-transito { border-left-color: var(--orange); }
-        .st-reparacion { border-left-color: var(--success); }
         
-        .btn-del { position: absolute; top: 8px; right: 8px; color: var(--danger); background: none; border: none; cursor: pointer; font-size: 1.1em; }
+        .btn-action-hist { color: var(--text); cursor: pointer; font-size: 0.8em; margin-right: 15px; opacity: 0.7; }
+        .btn-action-hist:hover { opacity: 1; }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
         .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); max-height: 90vh; overflow-y: auto; }
@@ -47,10 +61,18 @@
 </head>
 <body>
 
+    <a href="https://vectorescomprados-pixel.github.io/Gestion-de-Consorcios/" class="btn-home">
+        <i class="fas fa-home"></i>
+    </a>
+
+    <button id="btn-rocket" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+        <i class="fas fa-rocket"></i>
+    </button>
+
     <div class="wrap">
         <header class="main-header" id="header-main">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h2 style="color: var(--primary); font-size: 1.2em;" id="title-app">Gestión Consorcio</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-left: 50px;">
+                <h2 style="color: var(--primary); font-size: 1.1em;">Infracciones Internas</h2>
                 <button class="btn btn-primary" onclick="window.loadData()"><i class="fas fa-sync"></i></button>
             </div>
             <input type="text" id="search-input" placeholder="Buscar por UF o Nombre..." oninput="window.filterList()">
@@ -62,14 +84,14 @@
             </div>
         </header>
 
-        <div id="listado">Sincronizando...</div>
+        <div id="listado">Cargando Unidades...</div>
     </div>
 
     <div id="modal-infraccion" class="modal hidden">
         <div class="modal-content" style="border-color: var(--warning);">
-            <h3 id="inf-title" style="color:var(--warning)">Infracción</h3>
-            <p id="inf-cat-auto" style="font-size: 0.7em; color: #aaa; margin: 10px 0;"></p>
-            <textarea id="inf-desc" rows="4" placeholder="Detalle la infracción..."></textarea>
+            <h3 id="inf-title" style="color:var(--warning)">Nueva Infracción</h3>
+            <p id="inf-cat-auto" style="font-size: 0.75em; color: #aaa; margin: 10px 0; font-weight: bold;"></p>
+            <textarea id="inf-desc" rows="4" placeholder="Describa el motivo de la infracción..."></textarea>
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-infraccion').classList.add('hidden')">Cerrar</button>
                 <button class="btn btn-success" style="flex:1" id="btn-save-inf">Notificar WSP</button>
@@ -79,7 +101,7 @@
 
     <div id="modal-edit" class="modal hidden">
         <div class="modal-content">
-            <h3 style="color:var(--primary); margin-bottom:10px;">Editar Registro</h3>
+            <h3 style="color:var(--primary); margin-bottom:10px;">Corregir Registro</h3>
             <textarea id="edit-desc" rows="4"></textarea>
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-danger" style="flex:1" onclick="document.getElementById('modal-edit').classList.add('hidden')">Cancelar</button>
@@ -108,9 +130,12 @@
         let currentFilter = 'TODOS';
         let currentUFId = null;
         let activeEditId = null;
-        let activeEditColl = "";
 
-        // --- LÓGICA DE CATEGORÍAS (Corregida para asegurar tipos numéricos) ---
+        // Mostrar/Ocultar cohete
+        window.onscroll = () => {
+            document.getElementById("btn-rocket").style.display = window.scrollY > 300 ? "flex" : "none";
+        };
+
         const getCategoria = (uf) => {
             const n = parseInt(uf);
             if (n >= 0 && n <= 87) return "COCHERA";
@@ -121,7 +146,7 @@
 
         window.loadData = async () => {
             const list = document.getElementById("listado");
-            list.innerHTML = "<p style='text-align:center; margin-top:20px;'>Cargando Unidades...</p>";
+            list.innerHTML = "<p style='text-align:center; padding:20px'>Sincronizando con la base...</p>";
             try {
                 const snap = await getDocs(query(collection(db, "departamentos"), orderBy("UF", "asc")));
                 departamentos = snap.docs.map(d => {
@@ -133,14 +158,10 @@
         };
 
         window.setFilter = (type, btn) => {
-            // UI
             document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
             const searchInput = document.getElementById("search-input");
-            const header = document.getElementById("header-main");
-            
-            // Cambiar colores según categoría
             if(type === 'COCHERA') searchInput.style.borderColor = 'var(--orange)';
             else if(type === 'LOCAL') searchInput.style.borderColor = 'var(--purple)';
             else if(type === 'DEPTO') searchInput.style.borderColor = 'var(--primary)';
@@ -163,7 +184,7 @@
 
         function render(data) {
             const list = document.getElementById("listado");
-            list.innerHTML = data.length ? "" : "<p style='text-align:center; padding:20px'>No hay unidades en esta categoría.</p>";
+            list.innerHTML = data.length ? "" : "<p style='text-align:center; padding:20px'>Sin resultados.</p>";
             data.forEach(d => {
                 list.innerHTML += `
                     <div class="card">
@@ -171,13 +192,13 @@
                             <div>
                                 <small style="color:var(--primary); font-weight:bold">${d.cat}</small>
                                 <h3 style="color:white; margin:2px 0">UF ${d.UF}</h3>
-                                <p style="font-size:0.8em; color:#8696a0">${d.Propietario || 'Sin Datos'}</p>
+                                <p style="font-size:0.8em; color:#8696a0">${d.Propietario || '---'}</p>
                             </div>
                             <div style="display:flex; gap:10px">
                                 <button class="btn" style="background:var(--warning); color:white" onclick="window.openInf('${d.id}', '${d.UF}', '${d.cat}')">
                                     <i class="fas fa-exclamation-triangle"></i>
                                 </button>
-                                <button class="btn" style="background:var(--primary); color:white" onclick="window.verTodo('${d.id}', '${d.UF}')">
+                                <button class="btn" style="background:var(--primary); color:white" onclick="window.verInfracciones('${d.id}', '${d.UF}')">
                                     <i class="fas fa-eye"></i>
                                 </button>
                             </div>
@@ -187,11 +208,10 @@
             });
         }
 
-        // --- GESTIÓN INFRACCIONES ---
         window.openInf = (id, uf, cat) => {
             currentUFId = id;
             document.getElementById("inf-title").innerText = "Infracción UF " + uf;
-            document.getElementById("inf-cat-auto").innerText = "TIPO: " + cat;
+            document.getElementById("inf-cat-auto").innerText = "CATEGORÍA: " + cat;
             document.getElementById("inf-desc").value = "";
             document.getElementById("modal-infraccion").classList.remove("hidden");
         };
@@ -201,92 +221,85 @@
             const ufRaw = document.getElementById("inf-title").innerText.split(" ");
             if(!desc) return alert("Ingrese descripción");
 
-            const categoriaUF = getCategoria(ufRaw);
+            const catUF = getCategoria(ufRaw);
             const data = {
                 id_uf: currentUFId,
                 nro_uf: ufRaw,
-                tipo: (categoriaUF === 'COCHERA') ? "Transito" : "Convivencia",
+                tipo: (catUF === 'COCHERA') ? "Transito" : "Convivencia",
                 descripcion: desc,
                 fecha: new Date().toLocaleDateString(),
-                timestamp: new Date()
+                created: new Date()
             };
 
             try {
                 await addDoc(collection(db, "infracciones"), data);
-                const msg = `*REPORTE DE INFRACCIÓN*%0A*UF:* ${ufRaw}%0A*Categoría:* ${categoriaUF}%0A*Motivo:* ${desc}`;
+                const msg = `*REPORTE DE INFRACCIÓN*%0A*UF:* ${ufRaw}%0A*Motivo:* ${desc}`;
                 window.open(`https://wa.me/5491131552679?text=${msg}`, '_blank');
                 document.getElementById("modal-infraccion").classList.add("hidden");
                 window.loadData();
             } catch (e) { alert("Error al guardar"); }
         };
 
-        // --- HISTORIAL COMPLETO (Ojo) ---
-        window.verTodo = async (id, uf) => {
+        // HISTORIAL SOLO DE INFRACCIONES
+        window.verInfracciones = async (id, uf) => {
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(el.classList.contains("hidden")) return;
 
-            el.innerHTML = "<small>Buscando historial...</small>";
+            el.innerHTML = "<small style='color:var(--primary)'>Buscando infracciones...</small>";
             try {
-                const qRep = query(collection(db, "reparaciones"), where("id_uf", "==", id), orderBy("fecha", "desc"));
-                const qInf = query(collection(db, "infracciones"), where("id_uf", "==", id), orderBy("timestamp", "desc"));
+                // Solo consultamos la colección 'infracciones'
+                const q = query(collection(db, "infracciones"), where("id_uf", "==", id), orderBy("created", "desc"));
+                const snap = await getDocs(q);
                 
-                const [sRep, sInf] = await Promise.all([getDocs(qRep), getDocs(qInf)]);
                 el.innerHTML = "";
+                if(snap.empty) {
+                    el.innerHTML = "<p style='font-size:0.8em; color:var(--warning)'>Sin infracciones registradas.</p>";
+                    return;
+                }
 
-                if(sRep.empty && sInf.empty) el.innerHTML = "<p style='font-size:0.8em; color:var(--warning)'>Sin registros históricos.</p>";
-
-                sRep.forEach(docSnap => {
-                    const r = docSnap.data();
-                    el.innerHTML += `
-                        <div class="hist-item st-reparacion">
-                            <b>🔧 Reparación:</b> ${r.descripcion}<br><small>${r.fecha}</small>
-                            <div style="margin-top:5px; display:flex; gap:10px">
-                                <span style="color:var(--primary); cursor:pointer; font-size:0.8em" onclick="window.editReg('reparaciones','${docSnap.id}','${r.descripcion}')"><i class="fas fa-edit"></i> Editar</span>
-                                <span style="color:var(--danger); cursor:pointer; font-size:0.8em" onclick="window.deleteReg('reparaciones','${docSnap.id}')"><i class="fas fa-trash"></i> Borrar</span>
-                            </div>
-                        </div>`;
-                });
-
-                sInf.forEach(docSnap => {
-                    const i = docSnap.data();
+                snap.forEach(ds => {
+                    const i = ds.data();
                     const cl = i.tipo === "Transito" ? "st-transito" : "st-convivencia";
                     el.innerHTML += `
                         <div class="hist-item ${cl}">
-                            <b>⚠️ Infracción:</b> ${i.descripcion}<br><small>${i.fecha}</small>
-                            <div style="margin-top:5px; display:flex; gap:10px">
-                                <span style="color:var(--primary); cursor:pointer; font-size:0.8em" onclick="window.editReg('infracciones','${docSnap.id}','${i.descripcion}')"><i class="fas fa-edit"></i> Editar</span>
-                                <span style="color:var(--danger); cursor:pointer; font-size:0.8em" onclick="window.deleteReg('infracciones','${docSnap.id}')"><i class="fas fa-trash"></i> Borrar</span>
+                            <b>${i.tipo.toUpperCase()}:</b> ${i.descripcion}<br>
+                            <small>${i.fecha}</small>
+                            <div style="margin-top:8px; display:flex;">
+                                <span class="btn-action-hist" style="color:var(--primary)" onclick="window.editInf('${ds.id}','${i.descripcion}')"><i class="fas fa-edit"></i> Editar</span>
+                                <span class="btn-action-hist" style="color:var(--danger)" onclick="window.delInf('${ds.id}')"><i class="fas fa-trash"></i> Borrar</span>
                             </div>
                         </div>`;
                 });
-            } catch (e) { el.innerHTML = "Error cargando historial."; }
+            } catch (e) { 
+                console.error(e);
+                el.innerHTML = "<p style='color:var(--danger); font-size:0.8em'>Error al cargar historial.</p>"; 
+            }
         };
 
-        // --- EDICIÓN Y SEGURIDAD ---
-        window.editReg = (coll, id, oldDesc) => {
-            activeEditColl = coll; activeEditId = id;
-            document.getElementById("edit-desc").value = oldDesc;
+        window.editInf = (id, old) => {
+            activeEditId = id;
+            document.getElementById("edit-desc").value = old;
             document.getElementById("modal-edit").classList.remove("hidden");
         };
 
         document.getElementById("btn-update-reg").onclick = async () => {
             try {
-                await updateDoc(doc(db, activeEditColl, activeEditId), { 
+                await updateDoc(doc(db, "infracciones", activeEditId), { 
                     descripcion: document.getElementById("edit-desc").value 
                 });
                 document.getElementById("modal-edit").classList.add("hidden");
                 window.loadData();
-            } catch (e) { alert("Error al actualizar"); }
+            } catch (e) { alert("Error"); }
         };
 
-        window.deleteReg = async (coll, id) => {
-            const pin = prompt("🔐 Ingrese Clave Maestra (4750) para eliminar:");
+        window.delInf = async (id) => {
+            const pin = prompt("🔐 Clave Maestra (4750) para eliminar:");
             if(pin === "4750") {
                 try {
-                    await deleteDoc(doc(db, coll, id));
+                    await deleteDoc(doc(db, "infracciones", id));
                     window.loadData();
-                } catch (e) { alert("Error al eliminar"); }
+                } catch (e) { alert("Error"); }
             } else if (pin !== null) alert("Clave incorrecta.");
         };
 
