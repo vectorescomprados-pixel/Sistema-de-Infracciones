@@ -1,0 +1,23 @@
+{
+  "name": "Gestión de Infracciones Pro",
+  "short_name": "Infracciones",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#0b141a",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icono.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icono.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

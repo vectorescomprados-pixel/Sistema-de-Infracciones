@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0,viewport-fit=cover">
     <title>Gestión de Infracciones Pro</title>
     
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0b141a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="icono.png">
+    <link rel="apple-touch-icon" href="icono.png">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
@@ -17,7 +25,6 @@
         .wrap { width: 95%; max-width: 450px; padding-top: 210px; padding-bottom: 80px; position: relative; }
         .hidden { display: none !important; }
 
-        /* Botones Navegación */
         .btn-home {
             position: fixed; top: 15px; left: 15px; z-index: 9999;
             background: var(--primary); color: white; border: none;
@@ -32,7 +39,6 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.4); align-items: center; justify-content: center;
         }
 
-        /* Cabecera */
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .filter-bar { display: flex; gap: 5px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px; }
         .btn-filter { padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); background: #1d2a33; color: #aaa; font-size: 0.8em; cursor: pointer; white-space: nowrap; flex: 1; }
@@ -41,12 +47,11 @@
         .filter-cochera.active { background: var(--orange) !important; border-color: var(--orange) !important; }
         .filter-local.active { background: var(--purple) !important; border-color: var(--purple) !important; }
 
-        input, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; }
+        input, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; font-size: 16px; }
         
         .card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border); }
-        .btn { padding: 10px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; }
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; }
         
-        /* Historial */
         .hist-item { background: #1a242d; padding: 12px; margin-top: 8px; border-radius: 8px; font-size: 0.85em; position: relative; border-left: 5px solid #ccc; }
         .st-convivencia { border-left-color: var(--purple); }
         .st-transito { border-left-color: var(--orange); }
@@ -54,7 +59,11 @@
         .btn-action-hist { cursor: pointer; font-size: 0.8em; margin-right: 15px; font-weight: bold; }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
-        .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 20px; border-radius: 15px; border: 1px solid var(--primary); max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: var(--card); width: 100%; max-width: 400px; padding: 25px; border-radius: 15px; border: 1px solid var(--border); text-align: center; }
+
+        .btn-authorize { background: #2563eb; color: white; flex: 1; }
+        .btn-return { background: #e11d48; color: white; flex: 1; }
+        .security-input { text-align: center; letter-spacing: 5px; font-weight: bold; font-size: 1.2em; border-color: var(--primary); }
     </style>
 </head>
 <body>
@@ -68,14 +77,14 @@
     </button>
 
     <div class="wrap">
-        <header class="main-header" id="header-main">
+        <header class="main-header">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-left: 50px;">
                 <h2 style="color: var(--primary); font-size: 1.1em;">Infracciones Internas</h2>
-                <button class="btn btn-primary" onclick="window.loadData()"><i class="fas fa-sync"></i></button>
+                <button class="btn" style="background: var(--primary); color:white" onclick="window.loadData()"><i class="fas fa-sync"></i></button>
             </div>
-            <div style="position: relative; display: flex; gap: 5px;">
+            <div style="display: flex; gap: 5px;">
                 <input type="text" id="search-input" placeholder="Buscar UF o Propietario..." oninput="window.filterList()">
-                <button class="btn btn-danger" style="margin-bottom:10px" onclick="window.clearSearch()"><i class="fas fa-times"></i></button>
+                <button class="btn" style="background:var(--danger); color:white; margin-bottom:10px" onclick="window.clearSearch()"><i class="fas fa-times"></i></button>
             </div>
             <div class="filter-bar">
                 <button class="btn-filter active" onclick="window.setFilter('TODOS', this)">Todos</button>
@@ -84,8 +93,19 @@
                 <button class="btn-filter filter-depto" onclick="window.setFilter('DEPTO', this)">Deptos</button>
             </div>
         </header>
-
         <div id="listado">Cargando...</div>
+    </div>
+
+    <div id="modal-security" class="modal hidden">
+        <div class="modal-content">
+            <h3 style="color:white; margin-bottom: 5px;">Seguridad Requerida</h3>
+            <p id="security-msg" style="color: #8696a0; margin-bottom: 20px; font-size: 0.9em;"></p>
+            <input type="password" id="master-pin" class="security-input" placeholder="Clave Administrativa">
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="btn btn-authorize" id="btn-auth-confirm">AUTORIZAR</button>
+                <button class="btn btn-return" onclick="window.closeSecurity()">VOLVER</button>
+            </div>
+        </div>
     </div>
 
     <div id="modal-infraccion" class="modal hidden">
@@ -93,13 +113,12 @@
             <h3 id="inf-title" style="color:var(--warning)">Nueva Infracción</h3>
             <p id="inf-cat-auto" style="font-size: 0.75em; color: #aaa; margin: 10px 0;"></p>
             <textarea id="inf-desc" rows="4" placeholder="Describa el motivo..."></textarea>
-            
             <div style="display:flex; flex-direction: column; gap:8px;">
                 <div style="display:flex; gap:8px;">
-                    <button class="btn btn-primary" style="flex:1" id="btn-save-silent">Solo Guardar</button>
-                    <button class="btn btn-success" style="flex:1" id="btn-save-wsp"><i class="fab fa-whatsapp"></i> Notificar</button>
+                    <button class="btn" style="background:var(--primary); color:white; flex:1" id="btn-save-silent">Solo Guardar</button>
+                    <button class="btn" style="background:var(--success); color:white; flex:1" id="btn-save-wsp"><i class="fab fa-whatsapp"></i> Notificar</button>
                 </div>
-                <button class="btn btn-danger" onclick="document.getElementById('modal-infraccion').classList.add('hidden')">Cancelar</button>
+                <button class="btn" style="background:var(--danger); color:white" onclick="document.getElementById('modal-infraccion').classList.add('hidden')">Cancelar</button>
             </div>
         </div>
     </div>
@@ -110,10 +129,10 @@
             <textarea id="edit-desc" rows="4"></textarea>
             <div style="display:flex; flex-direction: column; gap:8px;">
                 <div style="display:flex; gap:8px;">
-                    <button class="btn btn-primary" style="flex:1" id="btn-update-silent">Actualizar</button>
-                    <button class="btn btn-success" style="flex:1" id="btn-update-wsp"><i class="fab fa-whatsapp"></i> Notificar</button>
+                    <button class="btn" style="background:var(--primary); color:white; flex:1" id="btn-update-silent">Actualizar</button>
+                    <button class="btn" style="background:var(--success); color:white; flex:1" id="btn-update-wsp"><i class="fab fa-whatsapp"></i> Notificar</button>
                 </div>
-                <button class="btn btn-danger" onclick="document.getElementById('modal-edit').classList.add('hidden')">Cerrar</button>
+                <button class="btn" style="background:var(--danger); color:white" onclick="document.getElementById('modal-edit').classList.add('hidden')">Cerrar</button>
             </div>
         </div>
     </div>
@@ -139,10 +158,9 @@
         let currentUFId = null;
         let activeEditId = null;
         let activeEditUF = "";
+        let pendingDeleteId = null;
 
-        window.onscroll = () => {
-            document.getElementById("btn-rocket").style.display = window.scrollY > 300 ? "flex" : "none";
-        };
+        window.onscroll = () => { document.getElementById("btn-rocket").style.display = window.scrollY > 300 ? "flex" : "none"; };
 
         const getCategoria = (uf) => {
             const n = parseInt(uf);
@@ -162,13 +180,10 @@
             } catch (e) { console.error(e); }
         };
 
-        window.clearSearch = () => {
-            document.getElementById("search-input").value = "";
-            window.filterList();
-        };
+        window.clearSearch = () => { document.getElementById("search-input").value = ""; window.filterList(); };
 
         window.setFilter = (type, btn) => {
-            window.clearSearch(); // LIMPIAR BUSQUEDA AL CAMBIAR CATEGORIA
+            window.clearSearch();
             document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const si = document.getElementById("search-input");
@@ -200,14 +215,31 @@
                                 <p style="font-size:0.8em; color:#8696a0">${d.Propietario || '---'}</p>
                             </div>
                             <div style="display:flex; gap:10px">
-                                <button class="btn" style="background:var(--warning); color:white" onclick="window.openInf('${d.id}', '${d.UF}', '${d.cat}')"><i class="fas fa-exclamation-triangle"></i></button>
-                                <button class="btn" style="background:var(--primary); color:white" onclick="window.verInfracciones('${d.id}', '${d.UF}')"><i class="fas fa-eye"></i></button>
+                                <button class="btn" style="background:var(--warning); color:white; padding:8px" onclick="window.openInf('${d.id}', '${d.UF}', '${d.cat}')"><i class="fas fa-exclamation-triangle"></i></button>
+                                <button class="btn" style="background:var(--primary); color:white; padding:8px" onclick="window.verInfracciones('${d.id}', '${d.UF}')"><i class="fas fa-eye"></i></button>
                             </div>
                         </div>
                         <div id="det-${d.id}" class="hidden" style="margin-top:15px; border-top:1px solid var(--border); padding-top:10px"></div>
                     </div>`;
             });
         }
+
+        window.openSecurity = (id, nro) => {
+            pendingDeleteId = id;
+            document.getElementById("security-msg").innerText = "¿Borrar registro UF " + nro + "?";
+            document.getElementById("master-pin").value = "";
+            document.getElementById("modal-security").classList.remove("hidden");
+            setTimeout(() => document.getElementById("master-pin").focus(), 300);
+        };
+
+        window.closeSecurity = () => { document.getElementById("modal-security").classList.add("hidden"); pendingDeleteId = null; };
+
+        document.getElementById("btn-auth-confirm").onclick = async () => {
+            if(document.getElementById("master-pin").value === "4750") {
+                await deleteDoc(doc(db, "infracciones", pendingDeleteId));
+                window.closeSecurity(); window.loadData();
+            } else { alert("Clave incorrecta"); }
+        };
 
         window.openInf = (id, uf, cat) => {
             currentUFId = id;
@@ -221,27 +253,13 @@
             const desc = document.getElementById("inf-desc").value.trim();
             const ufRaw = document.getElementById("inf-title").innerText.split(" ");
             if(!desc) return alert("Escribe un motivo");
-
-            const catUF = getCategoria(ufRaw);
-            const data = {
-                id_uf: currentUFId,
-                nro_uf: ufRaw,
-                tipo: (catUF === 'COCHERA') ? "Transito" : "Convivencia",
-                descripcion: desc,
-                fecha: new Date().toLocaleDateString(),
-                created: Date.now()
-            };
-
+            const data = { id_uf: currentUFId, nro_uf: ufRaw, tipo: (getCategoria(ufRaw) === 'COCHERA') ? "Transito" : "Convivencia", descripcion: desc, fecha: new Date().toLocaleDateString(), created: Date.now() };
             try {
                 await addDoc(collection(db, "infracciones"), data);
-                if(conWsp) {
-                    const msg = `*REPORTE DE INFRACCIÓN*%0A*UF:* ${ufRaw}%0A*Motivo:* ${desc}`;
-                    window.open(`https://wa.me/5491131552679?text=${msg}`, '_blank');
-                }
+                if(conWsp) window.open(`https://wa.me/5491131552679?text=*INFRACCIÓN UF ${ufRaw}*%0A${desc}`, '_blank');
                 document.getElementById("modal-infraccion").classList.add("hidden");
-                window.clearSearch(); // LIMPIAR BUSCADOR LUEGO DE RESULTADO EXITOSO
-                window.loadData();
-            } catch (e) { alert("Error al guardar"); }
+                window.clearSearch(); window.loadData();
+            } catch (e) { alert("Error"); }
         };
 
         document.getElementById("btn-save-silent").onclick = () => procesarGuardado(false);
@@ -251,33 +269,25 @@
             const el = document.getElementById("det-" + id);
             el.classList.toggle("hidden");
             if(el.classList.contains("hidden")) return;
-
-            el.innerHTML = "<small style='color:var(--primary)'>Cargando historial...</small>";
-            try {
-                const q = query(collection(db, "infracciones"), where("id_uf", "==", id));
-                const snap = await getDocs(q);
-                let infracciones = [];
-                snap.forEach(ds => infracciones.push({id: ds.id, ...ds.data()}));
-                infracciones.sort((a, b) => b.created - a.created);
-
-                el.innerHTML = infracciones.length ? "" : "<p style='font-size:0.8em; color:var(--warning)'>Sin infracciones.</p>";
-                infracciones.forEach(i => {
-                    const cl = i.tipo === "Transito" ? "st-transito" : "st-convivencia";
-                    el.innerHTML += `
-                        <div class="hist-item ${cl}">
-                            <b>${i.tipo.toUpperCase()}:</b> ${i.descripcion}<br><small>${i.fecha}</small>
-                            <div style="margin-top:8px; display:flex;">
-                                <span class="btn-action-hist" style="color:var(--primary)" onclick="window.editInf('${i.id}','${i.descripcion}', '${uf}')"><i class="fas fa-edit"></i> Editar / WSP</span>
-                                <span class="btn-action-hist" style="color:var(--danger)" onclick="window.delInf('${i.id}')"><i class="fas fa-trash"></i> Borrar</span>
-                            </div>
-                        </div>`;
-                });
-            } catch (e) { el.innerHTML = "Error cargando."; }
+            el.innerHTML = "<small>Cargando...</small>";
+            const q = query(collection(db, "infracciones"), where("id_uf", "==", id));
+            const snap = await getDocs(q);
+            let logs = [];
+            snap.forEach(ds => logs.push({id: ds.id, ...ds.data()}));
+            logs.sort((a, b) => b.created - a.created);
+            el.innerHTML = logs.length ? "" : "<p style='font-size:0.8em; color:var(--warning)'>Sin infracciones.</p>";
+            logs.forEach(i => {
+                el.innerHTML += `<div class="hist-item ${i.tipo === "Transito" ? "st-transito" : "st-convivencia"}">
+                    <b>${i.tipo.toUpperCase()}:</b> ${i.descripcion}<br><small>${i.fecha}</small>
+                    <div style="margin-top:8px; display:flex;">
+                        <span class="btn-action-hist" style="color:var(--primary)" onclick="window.editInf('${i.id}','${i.descripcion}', '${uf}')"><i class="fas fa-edit"></i> Editar</span>
+                        <span class="btn-action-hist" style="color:var(--danger)" onclick="window.openSecurity('${i.id}','${uf}')"><i class="fas fa-trash"></i> Borrar</span>
+                    </div></div>`;
+            });
         };
 
         window.editInf = (id, old, uf) => {
-            activeEditId = id;
-            activeEditUF = uf;
+            activeEditId = id; activeEditUF = uf;
             document.getElementById("edit-desc").value = old;
             document.getElementById("edit-header").innerText = "Editar UF " + uf;
             document.getElementById("modal-edit").classList.remove("hidden");
@@ -285,30 +295,16 @@
 
         const procesarActualizacion = async (conWsp) => {
             const desc = document.getElementById("edit-desc").value.trim();
-            try {
-                await updateDoc(doc(db, "infracciones", activeEditId), { descripcion: desc });
-                if(conWsp) {
-                    const msg = `*ACTUALIZACION DE INFRACCIÓN*%0A*UF:* ${activeEditUF}%0A*Nuevo Motivo:* ${desc}`;
-                    window.open(`https://wa.me/5491131552679?text=${msg}`, '_blank');
-                }
-                document.getElementById("modal-edit").classList.add("hidden");
-                window.loadData();
-            } catch (e) { alert("Error"); }
+            await updateDoc(doc(db, "infracciones", activeEditId), { descripcion: desc });
+            if(conWsp) window.open(`https://wa.me/5491131552679?text=*ACTUALIZACIÓN UF ${activeEditUF}*%0A${desc}`, '_blank');
+            document.getElementById("modal-edit").classList.add("hidden");
+            window.loadData();
         };
 
         document.getElementById("btn-update-silent").onclick = () => procesarActualizacion(false);
         document.getElementById("btn-update-wsp").onclick = () => procesarActualizacion(true);
 
-        window.delInf = async (id) => {
-            const pin = prompt("🔐 Clave Maestra (4750):");
-            if(pin === "4750") {
-                try {
-                    await deleteDoc(doc(db, "infracciones", id));
-                    window.loadData();
-                } catch (e) { alert("Error"); }
-            } else if (pin !== null) alert("Clave incorrecta");
-        };
-
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }
         window.loadData();
     </script>
 </body>
