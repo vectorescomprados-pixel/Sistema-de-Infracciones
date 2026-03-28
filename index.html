@@ -42,10 +42,12 @@
         .main-header { position: fixed; top: 0; width: 95%; max-width: 450px; background: var(--card); z-index: 1000; padding: 15px; border-bottom: 3px solid var(--primary); }
         .filter-bar { display: flex; gap: 5px; margin-top: 10px; overflow-x: auto; padding-bottom: 5px; }
         .btn-filter { padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); background: #1d2a33; color: #aaa; font-size: 0.8em; cursor: pointer; white-space: nowrap; flex: 1; }
-        .btn-filter.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .btn-filter.active { color: white; border-color: transparent; }
         
-        .filter-cochera.active { background: var(--orange) !important; border-color: var(--orange) !important; }
-        .filter-local.active { background: var(--purple) !important; border-color: var(--purple) !important; }
+        /* Colores específicos de filtros activos */
+        .filter-cochera.active { background: var(--orange) !important; }
+        .filter-local.active { background: var(--purple) !important; }
+        .filter-depto.active { background: var(--primary) !important; }
 
         input, textarea { width: 100%; padding: 12px; background: #1d2a33; border: 1px solid var(--border); color: #fff; border-radius: 8px; outline: none; margin-bottom: 10px; font-size: 16px; }
         
@@ -87,8 +89,7 @@
                 <button class="btn" style="background:var(--danger); color:white; margin-bottom:10px" onclick="window.clearSearch()"><i class="fas fa-times"></i></button>
             </div>
             <div class="filter-bar">
-                <button class="btn-filter active" onclick="window.setFilter('TODOS', this)">Todos</button>
-                <button class="btn-filter filter-cochera" onclick="window.setFilter('COCHERA', this)">Cocheras</button>
+                <button class="btn-filter filter-cochera active" onclick="window.setFilter('COCHERA', this)">Cocheras</button>
                 <button class="btn-filter filter-local" onclick="window.setFilter('LOCAL', this)">Locales</button>
                 <button class="btn-filter filter-depto" onclick="window.setFilter('DEPTO', this)">Deptos</button>
             </div>
@@ -154,7 +155,7 @@
         const db = getFirestore(app);
 
         let departamentos = [];
-        let currentFilter = 'TODOS';
+        let currentFilter = 'COCHERA'; // ARRANCA POR DEFECTO EN COCHERAS
         let currentUFId = null;
         let activeEditId = null;
         let activeEditUF = "";
@@ -196,7 +197,7 @@
             const s = document.getElementById("search-input").value.toLowerCase();
             const f = departamentos.filter(d => {
                 const ms = d.UF.toString().includes(s) || (d.Propietario && d.Propietario.toLowerCase().includes(s));
-                const mt = (currentFilter === 'TODOS') || (d.cat === currentFilter);
+                const mt = (d.cat === currentFilter); // Siempre filtra por la categoría seleccionada
                 return ms && mt;
             });
             render(f);
@@ -204,7 +205,7 @@
 
         function render(data) {
             const list = document.getElementById("listado");
-            list.innerHTML = data.length ? "" : "<p style='text-align:center; padding:20px'>Sin datos.</p>";
+            list.innerHTML = data.length ? "" : "<p style='text-align:center; padding:20px'>Sin datos en esta categoría.</p>";
             data.forEach(d => {
                 list.innerHTML += `
                     <div class="card">
